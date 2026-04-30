@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(kubectl exec *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(k\\) for k in d.get\\('paths',{}\\).keys\\(\\) if 'pusher' in k.lower\\(\\) or 'websocket' in k.lower\\(\\) or 'ws' in k.lower\\(\\)]\")",
+      "Bash(curl -sb /tmp/keep_cookies2 \"http://139.162.93.200:3000/incidents\" -v)",
+      "Bash(curl -sb /tmp/keep_cookies2 \"http://139.162.93.200:3000/v2/incidents\")",
+      "Bash(helm show *)",
+      "Bash(helm repo *)",
+      "Bash(helm search *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "WebSearch"
+    ]
+  }
+}

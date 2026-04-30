@@ -1,0 +1,60 @@
+resource "helm_release" "keep" {
+  name       = "keep"
+  repository = "https://keephq.github.io/helm-charts"
+  chart      = "keep"
+  namespace        = "keep"
+  create_namespace = true
+
+  depends_on = [helm_release.ingress_nginx]
+
+  values = [
+    yamlencode({
+      ingress = {
+        enabled   = true
+        className = "nginx"
+        annotations = {
+          "nginx.ingress.kubernetes.io/proxy-read-timeout"    = "3600"
+          "nginx.ingress.kubernetes.io/proxy-send-timeout"    = "3600"
+          "nginx.ingress.kubernetes.io/proxy-connect-timeout" = "3600"
+        }
+        hosts = [{ host = local.keep_host }]
+      }
+
+      backend = {
+        env = [
+          { name = "SECRET_KEY", value = var.keep_secret_key },
+          { name = "AUTH_TYPE", value = "NO_AUTH" },
+          { name = "PUSHER_APP_ID", value = "1" },
+          { name = "PUSHER_APP_KEY", value = "keepappkey" },
+          { name = "PUSHER_APP_SECRET", value = "keepappsecret" },
+          { name = "PUSHER_HOST", value = "keep-websocket" },
+          { name = "PUSHER_PORT", value = "6001" },
+        ]
+      }
+
+      frontend = {
+        env = [
+          { name = "AUTH_TYPE", value = "NO_AUTH" },
+          { name = "NEXTAUTH_SECRET", value = var.keep_secret_key },
+          { name = "NEXTAUTH_URL", value = "http://${local.keep_host}" },
+          { name = "NEXTAUTH_URL_INTERNAL", value = "http://keep-frontend:3000" },
+          { name = "API_URL", value = "http://keep-backend:8080" },
+          { name = "PUSHER_APP_KEY", value = "keepappkey" },
+          { name = "PUSHER_HOST", value = local.keep_host },
+          { name = "PUSHER_PORT", value = "80" },
+        ]
+      }
+
+      websocket = {
+        env = [
+          { name = "SOKETI_HOST", value = "0.0.0.0" },
+          { name = "SOKETI_DEBUG", value = "0" },
+          { name = "SOKETI_USER_AUTHENTICATION_TIMEOUT", value = "3000" },
+          { name = "SOKETI_DEFAULT_APP_ID", value = "1" },
+          { name = "SOKETI_DEFAULT_APP_KEY", value = "keepappkey" },
+          { name = "SOKETI_DEFAULT_APP_SECRET", value = "keepappsecret" },
+        ]
+      }
+    })
+  ]
+}

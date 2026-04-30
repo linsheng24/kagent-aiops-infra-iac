@@ -1,0 +1,36 @@
+# Ignore terraform variable files
+*.tfvars
+!*.tfvars.example
+
+# Ignore .terraform directory
+.terraform/
+.terraform.lock.hcl
+
+# Ignore terraform state files
+*.tfstate
+*.tfstate.*
+
+# Ignore crash logs
+crash.log
+
+# Ignore override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore plan files
+*.tfplan
+
+# Ignore backup files
+*.backup
+
+# Ignore .DS_Store (macOS)
+.DS_Store
+
+# Kubeconfig file
+kubeconfig.yaml
+
+# Editor
+.vscode/
+.idea/

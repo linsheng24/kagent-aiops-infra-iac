@@ -1,0 +1,46 @@
+version: '3'
+
+tasks:
+  kubeconfig:
+    desc: Initialize the kubeconfig for the LKE cluster
+    cmds:
+      - export KUBECONFIG=./kubeconfig.yaml:$HOME/.kube/config && kubectl config view --flatten > ~/.kube/config
+      - 'kubectl config use-context lke$(terraform output -raw cluster_id)-ctx'
+
+  open-grafana:
+    desc: Open Grafana UI in the default browser
+    cmds:
+      - open http://$(kubectl get svc grafana -n monitoring -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+
+  open-keep:
+    desc: Open Keep UI via nginx ingress
+    cmds:
+      - open http://$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath="{.status.loadBalancer.ingress[0].ip}").nip.io
+
+  stress-cpu:
+    desc: Run CPU stress test on first node (triggers alert after 5m)
+    vars:
+      NODE:
+        sh: kubectl get nodes --no-headers | awk '{print $1}' | head -1
+    cmds:
+      - |
+        echo "Stressing node: {{.NODE}}"
+        kubectl run stress-cpu \
+          --image=polinux/stress \
+          --restart=Never \
+          --overrides='{"spec":{"nodeSelector":{"kubernetes.io/hostname":"{{.NODE}}"}}}' \
+          -- stress --cpu 4 --timeout 600s
+        echo "Stress pod started. Alert will fire in ~5m if CPU > 80%."
+        echo "Watch CPU: kubectl top nodes"
+        echo "Stop with: task stop-stress"
+
+  stop-stress:
+    desc: Remove the CPU stress test pod
+    cmds:
+      - kubectl delete pod stress-cpu --ignore-not-found
+      - echo "Stress pod removed."
+
+  watch-nodes:
+    desc: Watch node CPU and memory usage
+    cmds:
+      - watch -n 5 kubectl top nodes
