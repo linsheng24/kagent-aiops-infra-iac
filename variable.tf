@@ -21,3 +21,9 @@ variable "keep_secret_key" {
   type        = string
   sensitive   = true
 }
+
+variable "discord_webhook_url" {
+  description = "Discord webhook URL for Keep alert notifications"
+  type        = string
+  sensitive   = true
+}

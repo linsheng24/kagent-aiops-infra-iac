@@ -30,6 +30,70 @@ resource "helm_release" "keep" {
           { name = "PUSHER_HOST", value = "keep-websocket" },
           { name = "PUSHER_PORT", value = "6001" },
         ]
+        provision = {
+          providers = {
+            discord = {
+              type = "discord"
+              authentication = {
+                webhook_url = var.discord_webhook_url
+              }
+            }
+          }
+          workflows = [
+            {
+              id          = "discord-warning"
+              name        = "Discord Warning Alert"
+              description = "Send Grafana warning alerts to Discord"
+              triggers = [
+                {
+                  type = "alert"
+                  filters = [
+                    { key = "source",   value = "grafana" },
+                    { key = "severity", value = "warning" },
+                  ]
+                }
+              ]
+              actions = [
+                {
+                  name = "notify-discord"
+                  provider = {
+                    type   = "discord"
+                    config = "{{ providers.discord }}"
+                    with = {
+                      content = "### 🟡 [WARNING] {{ alert.labels.alertname }}\n> 📍 **Node**  `{{ alert.labels.instance }}`\n> 📊 **Detail**  {{ alert.description }}"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              id          = "discord-critical"
+              name        = "Discord Critical Alert"
+              description = "Send Grafana critical alerts to Discord"
+              triggers = [
+                {
+                  type = "alert"
+                  filters = [
+                    { key = "source",   value = "grafana" },
+                    { key = "severity", value = "critical" },
+                  ]
+                }
+              ]
+              actions = [
+                {
+                  name = "notify-discord"
+                  provider = {
+                    type   = "discord"
+                    config = "{{ providers.discord }}"
+                    with = {
+                      content = "### 🔴 [CRITICAL] {{ alert.labels.alertname }}\n> 📍 **Node**  `{{ alert.labels.instance }}`\n> 📊 **Detail**  {{ alert.description }}"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
       }
 
       frontend = {
