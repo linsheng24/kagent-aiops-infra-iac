@@ -27,3 +27,9 @@ variable "discord_webhook_url" {
   type        = string
   sensitive   = true
 }
+
+variable "robusta_signing_key" {
+  description = "Signing key for Robusta (generate with: python3 -c \"import secrets; print(secrets.token_hex(32))\")"
+  type        = string
+  sensitive   = true
+}
