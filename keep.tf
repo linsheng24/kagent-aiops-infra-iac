@@ -1,7 +1,7 @@
 resource "helm_release" "keep" {
-  name       = "keep"
-  repository = "https://keephq.github.io/helm-charts"
-  chart      = "keep"
+  name             = "keep"
+  repository       = "https://keephq.github.io/helm-charts"
+  chart            = "keep"
   namespace        = "keep"
   create_namespace = true
 
@@ -38,6 +38,13 @@ resource "helm_release" "keep" {
                 webhook_url = var.discord_webhook_url
               }
             }
+
+            kagent_trigger = {
+              type = "webhook"
+              authentication = {
+                url = "http://discord-mcp.kagent.svc.cluster.local:8086/trigger"
+              }
+            }
           }
           workflows = [
             {
@@ -48,7 +55,7 @@ resource "helm_release" "keep" {
                 {
                   type = "alert"
                   filters = [
-                    { key = "source",   value = "grafana" },
+                    { key = "source", value = "grafana" },
                     { key = "severity", value = "warning" },
                   ]
                 }
@@ -74,7 +81,7 @@ resource "helm_release" "keep" {
                 {
                   type = "alert"
                   filters = [
-                    { key = "source",   value = "grafana" },
+                    { key = "source", value = "grafana" },
                     { key = "severity", value = "critical" },
                   ]
                 }
@@ -87,6 +94,50 @@ resource "helm_release" "keep" {
                     config = "{{ providers.discord }}"
                     with = {
                       content = "### 🔴 [CRITICAL] {{ alert.labels.alertname }}\n> 📍 **Node**  `{{ alert.labels.instance }}`\n> 📊 **Detail**  {{ alert.description }}"
+                    }
+                  }
+                }
+              ]
+            },
+
+            {
+              id          = "kagent-trigger"
+              name        = "kagent Alert Investigation"
+              description = "Trigger kagent AI agent to investigate critical alerts"
+              triggers = [
+                {
+                  type = "alert"
+                  filters = [
+                    { key = "severity", value = "critical" },
+                    { key = "status", value = "firing" },
+                  ]
+                }
+              ]
+              actions = [
+                {
+                  name = "trigger_investigation"
+                  provider = {
+                    type   = "webhook"
+                    config = "{{ providers.kagent_trigger }}"
+                    with = {
+                      fail_on_error = false
+                      body = {
+                        jsonrpc = "2.0"
+                        id      = "{{ alert.id }}"
+                        method  = "message/send"
+                        params = {
+                          message = {
+                            role      = "user"
+                            messageId = "{{ alert.id }}"
+                            parts = [
+                              {
+                                kind = "text"
+                                text = "Alert: {{ alert.name }} | Severity: {{ alert.severity }} | Instance: {{ alert.labels.instance }} | Description: {{ alert.description }}. Please investigate."
+                              }
+                            ]
+                          }
+                        }
+                      }
                     }
                   }
                 }

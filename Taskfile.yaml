@@ -17,6 +17,49 @@ tasks:
     cmds:
       - open http://$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath="{.status.loadBalancer.ingress[0].ip}").nip.io
 
+  open-kagent:
+    desc: Open kagent UI via port-forward
+    cmds:
+      - kubectl port-forward -n kagent svc/kagent-ui 8080:8080 &
+      - sleep 1
+      - open http://localhost:8080
+
+  kagent-agents:
+    desc: List all kagent agents and their status
+    cmds:
+      - kubectl get agents -n kagent
+
+  kagent-test:
+    desc: Send a test alert to alert-investigator agent and print response
+    cmds:
+      - |
+        kubectl port-forward -n kagent svc/kagent-controller 8083:8083 &>/tmp/kagent-pf.log &
+        PF_PID=$!
+        sleep 2
+        curl -s -X POST http://localhost:8083/api/a2a/kagent/alert-investigator/ \
+          -H "Content-Type: application/json" \
+          -d '{
+            "jsonrpc": "2.0",
+            "id": "taskfile-test",
+            "method": "message/send",
+            "params": {
+              "message": {
+                "role": "user",
+                "parts": [{"kind": "text", "text": "Alert: CrashLoopBackOff | Severity: critical | Instance: default/test-pod | Description: Pod keeps crashing with exit code 1. Please investigate."}],
+                "messageId": "taskfile-test-msg"
+              }
+            }
+          }' | python3 -c "
+        import json, sys
+        d = json.load(sys.stdin)
+        artifacts = d.get('result', {}).get('artifacts', [])
+        for a in artifacts:
+          for p in a.get('parts', []):
+            if p.get('kind') == 'text':
+              print(p['text'])
+        "
+        kill $PF_PID 2>/dev/null
+
   stress-cpu:
     desc: Run CPU stress test on first node (triggers alert after 5m)
     vars:
