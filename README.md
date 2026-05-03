@@ -1,6 +1,6 @@
 # kagent-aiops-infra-iac
 
-AI-powered Kubernetes observability and incident response stack, fully provisioned with Terraform on Linode LKE.
+AI-powered Kubernetes observability and incident response stack, fully provisioned with Terraform on K8s.
 
 When an alert fires, the pipeline automatically investigates the cluster using a Kagent AI agent powered by Gemini, then posts findings to Discord — no human needed for first-response triage.
 
@@ -8,7 +8,7 @@ When an alert fires, the pipeline automatically investigates the cluster using a
 
 ```mermaid
 graph TB
-    subgraph LKE["☁️ Linode LKE Cluster (ap-northeast, 4× g6-standard-2)"]
+    subgraph K8s["☁️ K8s Cluster"]
 
         subgraph Monitoring["📊 Monitoring Layer"]
             Prometheus["Prometheus"]
